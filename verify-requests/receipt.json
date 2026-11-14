@@ -1,0 +1,12 @@
+{
+  "monthlyActiveUsers": 20000000,
+  "dailyActiveRatio": 0.4,
+  "writesPerUserPerDay": 3,
+  "bytesPerWrite": 2000,
+  "mediaRatio": 0.6,
+  "bytesPerMedia": 800000,
+  "retentionYears": 7,
+  "sessionsPerUserPerDay": 2,
+  "sessionSeconds": 90,
+  "peakFactor": 3
+}
