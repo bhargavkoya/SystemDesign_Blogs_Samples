@@ -1,0 +1,37 @@
+== 1. Healthy: write 5, then read through each operation
+200 0.050834s  POST /admin/write/sku-1
+{"key":"sku-1","value":"5","version":1,"acceptedBy":"Node A","replicatedToNodeB":true}
+
+200 0.038859s  GET /read/stock/sku-1
+{"key":"sku-1","value":"5","version":1,"freshness":"confirmed","policy":"Refuse","attempts":1,"elapsedMs":23}
+
+200 0.022617s  GET /read/catalog/sku-1
+{"key":"sku-1","value":"5","version":1,"freshness":"confirmed","policy":"AnswerStale","attempts":1,"elapsedMs":20}
+
+== 2. Cut the link, then write 4 (Node A accepts, Node B never hears)
+200 0.005146s  POST /admin/partition
+{"partitioned":true}
+
+200 0.001800s  POST /admin/write/sku-1
+{"key":"sku-1","value":"4","version":2,"acceptedBy":"Node A","replicatedToNodeB":false}
+
+== 3. Same key, same partition, three operations
+503 0.320604s  GET /read/stock/sku-1
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.6.4","title":"Cannot confirm the latest value","status":503,"detail":"Policy Refuse: gave up after 1 attempt(s) and 298 ms.","traceId":"00-3e4f58aef90ecb69fc541004f0a0fd23-b89258a7a9c99e46-00"}
+
+200 0.301770s  GET /read/catalog/sku-1
+{"key":"sku-1","value":"5","version":1,"freshness":"stale","policy":"AnswerStale","attempts":1,"elapsedMs":299}
+
+503 2.003133s  GET /read/report/sku-1
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.6.4","title":"Cannot confirm the latest value","status":503,"detail":"Policy WaitThenRefuse: gave up after 4 attempt(s) and 2000 ms.","traceId":"00-24b724aa125883c5907c3f116baa0873-91bb42e22c8dcab4-00"}
+
+== 4. Heal: replay what Node B missed, then read again
+200 0.010207s  POST /admin/heal
+{"partitioned":false,"replayedWrites":1}
+
+200 0.022405s  GET /read/catalog/sku-1
+{"key":"sku-1","value":"4","version":2,"freshness":"confirmed","policy":"AnswerStale","attempts":1,"elapsedMs":20}
+
+200 0.022050s  GET /read/stock/sku-1
+{"key":"sku-1","value":"4","version":2,"freshness":"confirmed","policy":"Refuse","attempts":1,"elapsedMs":20}
+
